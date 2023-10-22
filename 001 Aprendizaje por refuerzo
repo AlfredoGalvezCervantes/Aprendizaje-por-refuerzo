@@ -1,0 +1,90 @@
+import numpy as np
+
+# Definir el entorno (un mundo de cuadrícula simple)
+# S: Estado inicial
+# G: Estado objetivo
+# #: Obstáculos
+# -: Espacios transitables
+world = np.array([
+    ['#', '#', '#', '#', 'G'],
+    ['#', '-', '-', '#', '-'],
+    ['#', '#', '#', '-', '#'],
+    ['#', '-', '-', '-', '-'],
+    ['#', 'S', '#', '#', '#']
+])
+
+# Definir recompensas
+rewards = {
+    'G': 100,  # Recompensa por llegar al estado objetivo
+    '-': -1,   # Recompensa por estados transitables
+    '#': -100, # Recompensa por obstáculos
+    'S': 0     # Recompensa por el estado inicial
+}
+
+# Definir hiperparámetros
+learning_rate = 0.1
+discount_factor = 0.9
+exploration_prob = 0.2
+num_episodes = 1000
+
+# Inicializar la tabla Q con valores arbitrarios
+num_states = len(np.unique(world))
+num_actions = 4  # Arriba, abajo, izquierda, derecha
+Q = np.random.rand(num_states, num_actions)
+
+# Función para obtener las acciones posibles en un estado
+def get_possible_actions(state):
+    return [action for action in range(num_actions) if world[state // 5][state % 5] != '#']
+
+# Algoritmo Q-Learning
+for episode in range(num_episodes):
+    state = 0  # Estado inicial
+    while True:
+        possible_actions = get_possible_actions(state)
+        
+        if np.random.uniform(0, 1) < exploration_prob:
+            action = np.random.choice(possible_actions)
+        else:
+            action = np.argmax(Q[state, possible_actions])
+        
+        next_state = state
+        if action == 0:
+            next_state -= 5  # Mover arriba
+        elif action == 1:
+            next_state += 5  # Mover abajo
+        elif action == 2:
+            next_state -= 1  # Mover izquierda
+        elif action == 3:
+            next_state += 1  # Mover derecha
+        
+        reward = rewards[world[next_state // 5][next_state % 5]]
+        
+        Q[state, action] = Q[state, action] + learning_rate * (reward + discount_factor * np.max(Q[next_state]) - Q[state, action])
+        
+        state = next_state
+        
+        if world[state // 5][state % 5] == 'G':
+            break
+
+# Imprimir la tabla Q aprendida
+print("Tabla Q aprendida:")
+print(Q)
+
+# Tomar decisiones basadas en la tabla Q aprendida
+state = 0  # Estado inicial
+while world[state // 5][state % 5] != 'G':
+    possible_actions = get_possible_actions(state)
+    action = np.argmax(Q[state, possible_actions])
+    
+    if action == 0:
+        print("Mover arriba")
+        state -= 5  # Mover arriba
+    elif action == 1:
+        print("Mover abajo")
+        state += 5  # Mover abajo
+    elif action == 2:
+        print("Mover izquierda")
+        state -= 1  # Mover izquierda
+    elif action == 3:
+        print("Mover derecha")
+        state += 1  # Mover derecha
